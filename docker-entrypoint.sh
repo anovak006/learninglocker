@@ -34,7 +34,7 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
 			echo '==> AWS S3 Bucket not found. Generating self-signed SSL certificates.'
 			openssl \
 				req -new -newkey rsa:4096 -days 365 -nodes -x509 \
-				-subj "/C=AU/ST=NSW/L=Sydney/O=Peopleplan Pty Ltd/CN=$APP_URL" \
+				-subj "/C=HR/L=Pula/O=CARNet/CN=$APP_URL" \
 				-keyout "/var/www/certs/$APP_URL.key" \
 				-out "/var/www/certs/$APP_URL.crt"
 		else
@@ -52,13 +52,24 @@ if [[ "$1" == apache2* ]] || [ "$1" == php-fpm ]; then
 				mv "$cert" "/var/www/certs/$APP_URL.${cert##*.}"
 			done
 		fi
-		echo "SSLCertificateKeyFile /var/www/certs/$APP_URL.key" >> /etc/apache2/apache2.conf
-		echo "SSLCertificateFile /var/www/certs/$APP_URL.crt" >> /etc/apache2/apache2.conf
-		echo "SSLCertificateChainFile /var/www/certs/$APP_URL.ca-bundle" >> /etc/apache2/apache2.conf
-		chmod 700 /var/www/certs
-		chmod 600 /var/www/certs/*
 	fi
-
+	# ssl.conf
+	chmod 700 /var/www/certs
+	chmod 600 /var/www/certs/*
+	chmod 750 /var/www/cacerts
+	chmod 660 /var/www/cacerts/*
+	chown www-data:www-data /var/www/cacerts
+	chown www-data:www-data /var/www/cacerts/*
+	cat >> /etc/apache2/apache2.conf <<-EOF
+	<VirtualHost *:443>
+		SSLEngine on
+		SSLVerifyClient none
+		SSLVerifyDepth 10
+		SSLCertificateKeyFile /var/www/certs/learninglocker.key
+		SSLCertificateFile /var/www/certs/learninglocker.crt
+		SSLCertificateChainFile /var/www/cacerts/ulika.postfix.pem
+	</VirtualHost>
+	EOF
 	# Give MONGO some time to boot up
 	: ${MONGO_WAIT_TIMEOUT:=${MONGO_WAIT_TIMEOUT:-10}}
 	echo -n "Sleeping for $MONGO_WAIT_TIMEOUT seconds while wating for mongodb to come alive..."

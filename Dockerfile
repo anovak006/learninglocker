@@ -73,6 +73,16 @@ COPY apache2.conf /etc/apache2/apache2.conf
 
 COPY docker-entrypoint.sh /entrypoint.sh
 
+# Copy SSL certificate
+RUN mkdir -p /var/www/certs
+COPY learninglocker.key /var/www/certs/.
+COPY learninglocker.crt /var/www/certs/.
+RUN mkdir -p /var/www/cacerts
+COPY ulika.postfix.pem /var/www/cacerts/.
+
+# PHP5.6+ SSL cert fix
+COPY php.ini /usr/local/etc/php/
+
 EXPOSE 443
 
 # grr, ENTRYPOINT resets CMD now
